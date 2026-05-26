@@ -2,6 +2,7 @@
 
 A game similar to the famous Chrome Dino Game, built using pygame-ce.
 Made by intern: @bassemfarid, no one or nothing else. 🤖
+@RyanMampilly (commit f54e5236c53873686a3f671b05fcdf57356d5cf3 and after)
 """
 
 import pygame
