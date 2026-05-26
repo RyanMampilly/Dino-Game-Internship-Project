@@ -19,7 +19,6 @@ GROUND_Y = 300  # The Y-coordinate of the ground level
 JUMP_GRAVITY_START_SPEED = -20  # The speed at which the player jumps
 players_gravity_speed = 0  # The current speed at which the player falls
 score = 0 # The current score
-score_start_time = 0 # The time that the score timer starts
 
 # Load level assets
 SKY_SURF = pygame.image.load("graphics/level/sky.png").convert()
@@ -27,6 +26,7 @@ GROUND_SURF = pygame.image.load("graphics/level/ground.png").convert()
 game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
 score_surf = game_font.render("SCORE?", False, "Black")
 score_rect = score_surf.get_rect(center=(400, 50))
+game_over_surf = game_font.render("YOU LOSE", False, "White")
 
 # Load sprite assets
 player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
@@ -55,20 +55,22 @@ while running:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 is_playing = True
                 egg_rect.left = 800
-                score_start_time = pygame.time.get_ticks()
+                score = 0 # Reset score
 
     if is_playing:
         screen.fill("purple")  # Wipe the screen
 
         # Update score
-        score = (pygame.time.get_ticks() - score_start_time) // 1000
-        score_surf = game_font.render(f"{score}", False, "Black")
+        score += 1
+            # finer score updates every frame, 
+            # but the in-game score will be the amount of seconds elapsed
+        score_surf = game_font.render(f"{score // 60}", False, "Black") 
+        score_rect = score_surf.get_rect(center=(400, 50)) # Re-center text
 
         # Blit the level assets
         screen.blit(SKY_SURF, (0, 0))
         screen.blit(GROUND_SURF, (0, GROUND_Y))
-        pygame.draw.rect(screen, "#c0e8ec", score_rect)
-        pygame.draw.rect(screen, "#c0e8ec", score_rect, 10)
+        pygame.draw.rect(screen, "#c0e8ec", score_rect, -1)
         screen.blit(score_surf, score_rect)
 
         # Adjust egg's horizontal location then blit it
@@ -91,6 +93,7 @@ while running:
     # When game is over, display game over message
     else:
         screen.fill("black")
+        screen.blit(game_over_surf, (400 - (game_over_surf.get_width() / 2 ),200 - (game_over_surf.get_height() / 2 )))
 
     # flip the display to put your work on screen
     pygame.display.flip()
