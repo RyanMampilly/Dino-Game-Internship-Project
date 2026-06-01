@@ -27,13 +27,6 @@ game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
 lives = 3
 lives_bar = []
 
-def object_movement(object_surf, object_list):
-    for obj in object_list:
-        obj.x -= 5
-        if obj.right <= 0:
-            object_list.remove(obj)
-        screen.blit(object_surf, obj)
-
 # Initial screen
 screen.fill("White")
 title_surf  = game_font.render("EGG SPRINT!", False, "Black")
@@ -125,11 +118,23 @@ while running:
         screen.blit(score_surf, score_rect)
 
         # Adjust egg's horizontal location then blit it
-        object_movement(egg_surf, enemy_list)
+
+        if score // 15 % 2 == 0: egg_surf = pygame.image.load("graphics/egg/egg_1.png").convert_alpha()
+        else: egg_surf = pygame.image.load("graphics/egg/egg_2.png").convert_alpha()
+
+        for obj in enemy_list:
+            obj.x -= 5
+            if obj.right <= 0:
+                enemy_list.remove(obj)
+            screen.blit(egg_surf, obj)
 
         # Adjust player's vertical location then blit it
         player_gravity_speed += 1
         player_rect.y += player_gravity_speed
+
+        if score // 15 % 2 == 0: player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
+        else: player_surf = pygame.image.load("graphics/player/player_walk_2.png").convert_alpha()
+
         if player_rect.bottom > GROUND_Y:
             player_rect.bottom = GROUND_Y
         screen.blit(player_surf, player_rect)
