@@ -84,6 +84,9 @@ milestone_sound = pygame.mixer.Sound("audio/milestone.wav")
 pickup_sound = pygame.mixer.Sound("audio/pickup.wav")
 game_over_sound = pygame.mixer.Sound("audio/game_over.wav")
 
+song = pygame.mixer.Sound("audio/song_badinerie.wav")
+song.play(-1)
+
 while running:
     for event in pygame.event.get():
         # pygame.QUIT --> user clicked X to close your window
@@ -108,6 +111,7 @@ while running:
                 gameloop_active = True
                 egg_rect.left = 800
                 score = 0 # Reset score
+                song.play(-1)
 
     if gameloop_active:
         screen.fill("purple")  # Wipe the screen
@@ -166,6 +170,7 @@ while running:
             player_gravity_speed = -10
             player_surf = pygame.image.load("graphics/player/player_jump.png").convert_alpha()
             game_over_sound.play()
+            song.stop()
             while player_rect.bottom < 500:
                 player_gravity_speed += 0.5
                 player_rect.y += player_gravity_speed
