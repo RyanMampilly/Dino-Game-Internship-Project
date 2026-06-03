@@ -10,6 +10,7 @@ from random import randint
 
 # Initialize Pygame and create a window
 pygame.init()
+pygame.mixer.init()
 screen = pygame.display.set_mode((800, 400))
 clock = pygame.time.Clock()
 running = True  # Pygame main loop, kills pygame when False
@@ -24,7 +25,8 @@ spawner = pygame.USEREVENT + 1
 pygame.time.set_timer(spawner,randint(600,2000))
 enemy_list = []
 game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
-lives = 3
+LIVES = 5
+lives = LIVES
 lives_bar = []
 
 # Initial screen
@@ -72,8 +74,15 @@ egg_rect = egg_surf.get_rect(bottomleft=(800, GROUND_Y))
 
 heart_f_surf = pygame.image.load("graphics/status/heart_full.png").convert_alpha()
 heart_b_surf = pygame.image.load("graphics/status/heart_broken.png").convert_alpha()
-for i in range(3):
+for i in range(lives):
     lives_bar.append(heart_f_surf)
+
+# Load SFX
+jump_sound = pygame.mixer.Sound("audio/jump.wav")
+hit_sound = pygame.mixer.Sound("audio/hit.wav")
+milestone_sound = pygame.mixer.Sound("audio/milestone.wav")
+pickup_sound = pygame.mixer.Sound("audio/pickup.wav")
+game_over_sound = pygame.mixer.Sound("audio/game_over.wav")
 
 while running:
     for event in pygame.event.get():
@@ -88,6 +97,7 @@ while running:
                 and event.key == pygame.K_SPACE
                 or event.type == pygame.MOUSEBUTTONDOWN
             ) and player_rect.bottom >= GROUND_Y:
+                jump_sound.play()
                 player_gravity_speed = JUMP_START_SPEED
             elif event.type == spawner:
                 enemy_list.append(egg_surf.get_rect(bottomleft=(800, GROUND_Y)))
@@ -104,6 +114,7 @@ while running:
 
         # Update score
         score += 1
+        if score % (60*100) == 0 and score != 0: milestone_sound.play() # Plays sound when score is multiple of 100
             # finer score updates every frame, 
             # but the in-game score will be the amount of seconds elapsed
         score_surf = game_font.render(f"{score // 60}", False, "Black") 
@@ -148,11 +159,13 @@ while running:
                 lives -= 1
                 lives_bar[lives] = heart_b_surf
                 enemy_list.remove(egg)
+                hit_sound.play()
         if lives <= 0:
             gameloop_active = False
             # Game Over animation
             player_gravity_speed = -10
             player_surf = pygame.image.load("graphics/player/player_jump.png").convert_alpha()
+            game_over_sound.play()
             while player_rect.bottom < 500:
                 player_gravity_speed += 0.5
                 player_rect.y += player_gravity_speed
@@ -168,7 +181,7 @@ while running:
                 pygame.display.update()
                 clock.tick(60)
 
-            lives = 3
+            lives = LIVES
             player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
             lives_bar = [heart_f_surf for i in lives_bar]
             enemy_list.clear()
@@ -186,4 +199,5 @@ while running:
 
     clock.tick(60)  # Limits loop to 60 FPS
 
+pygame.mixer.quit()
 pygame.quit()
