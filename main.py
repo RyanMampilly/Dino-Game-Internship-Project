@@ -6,6 +6,7 @@ Made by intern: @bassemfarid, no one or nothing else. 🤖
 """
 
 import pygame
+import math
 from random import randint
 
 # Initialize Pygame and create a window
@@ -22,8 +23,11 @@ JUMP_START_SPEED = -20  # The speed at which the player jumps
 player_gravity_speed = 0
 score = 0
 spawner = pygame.USEREVENT + 1
+pickup_spawner = pygame.USEREVENT + 2
 pygame.time.set_timer(spawner,randint(600,2000))
+pygame.time.set_timer(pickup_spawner,randint(16000,32000))
 enemy_list = []
+pickup_list = []
 game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
 LIVES = 5
 lives = LIVES
@@ -70,10 +74,12 @@ player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alp
 player_rect = player_surf.get_rect(bottomleft=(25, GROUND_Y))
 
 egg_surf = pygame.image.load("graphics/egg/egg_1.png").convert_alpha()
-egg_rect = egg_surf.get_rect(bottomleft=(800, GROUND_Y))
+
+heal_surf = pygame.image.load("graphics/pickup/heal.png").convert_alpha()
 
 heart_f_surf = pygame.image.load("graphics/status/heart_full.png").convert_alpha()
 heart_b_surf = pygame.image.load("graphics/status/heart_broken.png").convert_alpha()
+
 for i in range(lives):
     lives_bar.append(heart_f_surf)
 
@@ -86,6 +92,11 @@ game_over_sound = pygame.mixer.Sound("audio/game_over.wav")
 
 song = pygame.mixer.Sound("audio/song_badinerie.wav")
 song.play(-1)
+
+def update_hearts(bar, count):
+    for i in range(LIVES): bar[i] = heart_b_surf
+    for i in range(count): bar[i] = heart_f_surf
+    for i in range(LIVES): screen.blit(lives_bar[i], (10+i*50,10))
 
 while running:
     for event in pygame.event.get():
@@ -105,11 +116,14 @@ while running:
             elif event.type == spawner:
                 enemy_list.append(egg_surf.get_rect(bottomleft=(800, GROUND_Y)))
                 pygame.time.set_timer(spawner,randint(600,2000))
+            elif event.type == pickup_spawner:
+                pickup_list.append(heal_surf.get_rect(bottomleft=(800, 200)))
+                pygame.time.set_timer(pickup_spawner, randint(16000,32000))
+                
         else:
             # When player wants to play again by pressing SPACE
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE or event.type == pygame.MOUSEBUTTONDOWN:
                 gameloop_active = True
-                egg_rect.left = 800
                 score = 0 # Reset score
                 song.play(-1)
 
@@ -154,14 +168,27 @@ while running:
             player_rect.bottom = GROUND_Y
         screen.blit(player_surf, player_rect)
 
-        # Blit hearts bar
-        for i in range(len(lives_bar)): screen.blit(lives_bar[i], (10+i*50,10))
+        # Adjust pickup's location then blit it
+        for pick in pickup_list:
+            pick.x -= 3
+            pick.y = 200 + int(math.sin(score / 30) * 50)
+            if pick.colliderect(player_rect):
+                if lives < LIVES: lives += 1
+                pickup_list.remove(pick)
+                pickup_sound.play()
+            elif pick.right <= 0:
+                pickup_list.remove(pick)
+            screen.blit(heal_surf,pick)
+
+
+        # Blit lives
+        update_hearts(lives_bar, lives)
 
         # When player collides with enemy, game ends
         for egg in enemy_list:
             if egg.colliderect(player_rect):
                 lives -= 1
-                lives_bar[lives] = heart_b_surf
+                update_hearts(lives_bar, lives)
                 enemy_list.remove(egg)
                 hit_sound.play()
         if lives <= 0:
