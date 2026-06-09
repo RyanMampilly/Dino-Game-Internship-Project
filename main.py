@@ -20,6 +20,9 @@ running = True  # Pygame main loop, kills pygame when False
 gameloop_active = False # Rename of is_playing for clarity
 GROUND_Y = 300  # The Y-coordinate of the ground level
 JUMP_START_SPEED = -20  # The speed at which the player jumps
+LIVES = 3 # Lives in a full lives bar
+INVINCIBLE = False # Boolean to see if invincibility powerup is active
+PICKUP_TYPE = 0 # Saves the pickup type (0 = heal, 1 = invincibility)
 player_gravity_speed = 0
 score = 0
 spawner = pygame.USEREVENT + 1
@@ -29,9 +32,9 @@ pygame.time.set_timer(pickup_spawner,randint(16000,32000))
 enemy_list = []
 pickup_list = []
 game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
-LIVES = 5
 lives = LIVES
 lives_bar = []
+invincibility_end = 0
 
 # Initial screen
 screen.fill("White")
@@ -76,9 +79,11 @@ player_rect = player_surf.get_rect(bottomleft=(25, GROUND_Y))
 egg_surf = pygame.image.load("graphics/egg/egg_1.png").convert_alpha()
 
 heal_surf = pygame.image.load("graphics/pickup/heal.png").convert_alpha()
+invincible_surf = pygame.image.load("graphics/pickup/invincibility.png").convert_alpha()
 
 heart_f_surf = pygame.image.load("graphics/status/heart_full.png").convert_alpha()
 heart_b_surf = pygame.image.load("graphics/status/heart_broken.png").convert_alpha()
+heart_i_surf = pygame.image.load("graphics/status/heart_invincible.png").convert_alpha()
 
 for i in range(lives):
     lives_bar.append(heart_f_surf)
@@ -95,7 +100,9 @@ song.play(-1)
 
 def update_hearts(bar, count):
     for i in range(LIVES): bar[i] = heart_b_surf
-    for i in range(count): bar[i] = heart_f_surf
+    for i in range(count): 
+        if INVINCIBLE: bar[i] = heart_i_surf
+        else: bar[i] = heart_f_surf
     for i in range(LIVES): screen.blit(lives_bar[i], (10+i*50,10))
 
 while running:
@@ -113,11 +120,18 @@ while running:
             ) and player_rect.bottom >= GROUND_Y:
                 jump_sound.play()
                 player_gravity_speed = JUMP_START_SPEED
+            # Enemy spawner
             elif event.type == spawner:
                 enemy_list.append(egg_surf.get_rect(bottomleft=(800, GROUND_Y)))
                 pygame.time.set_timer(spawner,randint(600,2000))
+            # Pickup spawner
             elif event.type == pickup_spawner:
-                pickup_list.append(heal_surf.get_rect(bottomleft=(800, 200)))
+                if randint(0,1) == 0:
+                    PICKUP_TYPE = 0
+                    pickup_list.append(heal_surf.get_rect(bottomleft=(800, 200)))
+                else:
+                    PICKUP_TYPE = 1
+                    pickup_list.append(invincible_surf.get_rect(bottomleft=(800, 200)))
                 pygame.time.set_timer(pickup_spawner, randint(16000,32000))
                 
         else:
@@ -140,6 +154,7 @@ while running:
 
         # Scroll the sky to give a feeling of running instead of the eggs coming to you
         sky_surf.scroll(-1,0,pygame.SCROLL_REPEAT)
+        ground_surf.scroll(-5,0,pygame.SCROLL_REPEAT)
 
         # Blit the level assets
         screen.blit(sky_surf, (0, 0))
@@ -172,14 +187,22 @@ while running:
         for pick in pickup_list:
             pick.x -= 3
             pick.y = 200 + int(math.sin(score / 30) * 50)
+            # Pickup collision
             if pick.colliderect(player_rect):
-                if lives < LIVES: lives += 1
+                if PICKUP_TYPE == 0:
+                    if lives < LIVES: lives += 1
+                elif PICKUP_TYPE == 1:
+                    INVINCIBLE = True
+                    invincibility_end = score + 5*60
                 pickup_list.remove(pick)
                 pickup_sound.play()
             elif pick.right <= 0:
                 pickup_list.remove(pick)
-            screen.blit(heal_surf,pick)
+            if PICKUP_TYPE == 0: screen.blit(heal_surf,pick)
+            elif PICKUP_TYPE == 1: screen.blit(invincible_surf,pick)
+        if score == invincibility_end: INVINCIBLE = False
 
+        print(PICKUP_TYPE)
 
         # Blit lives
         update_hearts(lives_bar, lives)
@@ -187,8 +210,9 @@ while running:
         # When player collides with enemy, game ends
         for egg in enemy_list:
             if egg.colliderect(player_rect):
-                lives -= 1
-                update_hearts(lives_bar, lives)
+                if not INVINCIBLE:
+                    lives -= 1
+                    update_hearts(lives_bar, lives)
                 enemy_list.remove(egg)
                 hit_sound.play()
         if lives <= 0:
