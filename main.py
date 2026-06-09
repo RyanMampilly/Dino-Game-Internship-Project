@@ -202,8 +202,6 @@ while running:
             elif PICKUP_TYPE == 1: screen.blit(invincible_surf,pick)
         if score == invincibility_end: INVINCIBLE = False
 
-        print(PICKUP_TYPE)
-
         # Blit lives
         update_hearts(lives_bar, lives)
 
