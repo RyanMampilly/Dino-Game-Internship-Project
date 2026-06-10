@@ -23,6 +23,7 @@ JUMP_START_SPEED = -20  # The speed at which the player jumps
 LIVES = 3 # Lives in a full lives bar
 INVINCIBLE = False # Boolean to see if invincibility powerup is active
 PICKUP_TYPE = 0 # Saves the pickup type (0 = heal, 1 = invincibility)
+POWERUP_TIME = 5
 player_gravity_speed = 0
 score = 0
 spawner = pygame.USEREVENT + 1
@@ -71,6 +72,9 @@ score_rect = score_surf.get_rect(center=(400, 50))
 
 game_over_surf = game_font.render("YOU LOSE! TRY AGAIN?", False, "White")
 game_over_rect = game_over_surf.get_rect(center=(400,150))
+
+#powerup_timer_surf = game_font.render(str(POWERUP_TIME), False, "Black")
+#powerup_timer_rect = pygame.draw.rect(screen, "Blue", powerup_timer_surf.get_rect(center=(300,50)).inflate(20,20),10)
 
 # Load sprite assets
 player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
@@ -184,6 +188,7 @@ while running:
         screen.blit(player_surf, player_rect)
 
         # Adjust pickup's location then blit it
+        powerup_timer_surf = game_font.render(f"{(invincibility_end - score) // 60 + 1}", False, "White")
         for pick in pickup_list:
             pick.x -= 3 + (score // (60 * 100))
             pick.y = 200 + int(math.sin(score / 30) * 50)
@@ -193,7 +198,7 @@ while running:
                     if lives < LIVES: lives += 1
                 elif PICKUP_TYPE == 1:
                     INVINCIBLE = True
-                    invincibility_end = score + 5*60
+                    invincibility_end = score + POWERUP_TIME*60
                 pickup_list.remove(pick)
                 pickup_sound.play()
             elif pick.right <= 0:
@@ -201,6 +206,9 @@ while running:
             if PICKUP_TYPE == 0: screen.blit(heal_surf,pick)
             elif PICKUP_TYPE == 1: screen.blit(invincible_surf,pick)
         if score == invincibility_end: INVINCIBLE = False
+        if INVINCIBLE: 
+            powerup_timer_rect = pygame.draw.rect(screen, "Blue", powerup_timer_surf.get_rect(center=(25,100)))
+            screen.blit(powerup_timer_surf,powerup_timer_rect)
 
         # Blit lives
         update_hearts(lives_bar, lives)
