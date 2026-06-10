@@ -153,8 +153,8 @@ while running:
         score_rect = score_surf.get_rect(center=(400, 50)) # Re-center text
 
         # Scroll the sky to give a feeling of running instead of the eggs coming to you
-        sky_surf.scroll(-1,0,pygame.SCROLL_REPEAT)
-        ground_surf.scroll(-5,0,pygame.SCROLL_REPEAT)
+        sky_surf.scroll(-(1 + (score // (60 * 100))),0,pygame.SCROLL_REPEAT)
+        ground_surf.scroll(-(5 + (score // (60 * 100))),0,pygame.SCROLL_REPEAT)
 
         # Blit the level assets
         screen.blit(sky_surf, (0, 0))
@@ -167,7 +167,7 @@ while running:
         else: egg_surf = pygame.image.load("graphics/egg/egg_2.png").convert_alpha()
 
         for obj in enemy_list:
-            obj.x -= 5
+            obj.x -= 5 + (score // (60 * 100))
             if obj.right <= 0:
                 enemy_list.remove(obj)
             screen.blit(egg_surf, obj)
@@ -185,7 +185,7 @@ while running:
 
         # Adjust pickup's location then blit it
         for pick in pickup_list:
-            pick.x -= 3
+            pick.x -= 3 + (score // (60 * 100))
             pick.y = 200 + int(math.sin(score / 30) * 50)
             # Pickup collision
             if pick.colliderect(player_rect):
