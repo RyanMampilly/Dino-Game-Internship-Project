@@ -24,18 +24,22 @@ LIVES = 3 # Lives in a full lives bar
 INVINCIBLE = False # Boolean to see if invincibility powerup is active
 PICKUP_TYPE = 0 # Saves the pickup type (0 = heal, 1 = invincibility)
 POWERUP_TIME = 5
+game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
 player_gravity_speed = 0
 score = 0
+invincibility_end = 0
+
+    # Spawners
 spawner = pygame.USEREVENT + 1
 pickup_spawner = pygame.USEREVENT + 2
 pygame.time.set_timer(spawner,randint(600,2000))
 pygame.time.set_timer(pickup_spawner,randint(16000,32000))
+
+    # Arrays
 enemy_list = []
 pickup_list = []
-game_font = pygame.font.Font(pygame.font.get_default_font(), 50)
 lives = LIVES
 lives_bar = []
-invincibility_end = 0
 
 # Initial screen
 screen.fill("White")
@@ -73,9 +77,6 @@ score_rect = score_surf.get_rect(center=(400, 50))
 game_over_surf = game_font.render("YOU LOSE! TRY AGAIN?", False, "White")
 game_over_rect = game_over_surf.get_rect(center=(400,150))
 
-#powerup_timer_surf = game_font.render(str(POWERUP_TIME), False, "Black")
-#powerup_timer_rect = pygame.draw.rect(screen, "Blue", powerup_timer_surf.get_rect(center=(300,50)).inflate(20,20),10)
-
 # Load sprite assets
 player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
 player_rect = player_surf.get_rect(bottomleft=(25, GROUND_Y))
@@ -102,12 +103,40 @@ game_over_sound = pygame.mixer.Sound("audio/game_over.wav")
 song = pygame.mixer.Sound("audio/song_badinerie.wav")
 song.play(-1)
 
+def print_credits():
+    print("(c) ANDERSON INNOVATIONS")
+    print("Made with PyGame-CE")
+    print("Sprites made with LibreSprite, SFX by BFXR, Music by BeepBox")
+
 def update_hearts(bar, count):
     for i in range(LIVES): bar[i] = heart_b_surf
     for i in range(count): 
         if INVINCIBLE: bar[i] = heart_i_surf
         else: bar[i] = heart_f_surf
     for i in range(LIVES): screen.blit(lives_bar[i], (10+i*50,10))
+
+def game_over_animation():
+    player_gravity_speed = -10
+    player_surf = pygame.image.load("graphics/player/player_jump.png").convert_alpha()
+    game_over_sound.play()
+    song.stop()
+    while player_rect.bottom < 500:
+        player_gravity_speed += 0.5
+        player_rect.y += player_gravity_speed
+
+        screen.fill("purple")
+        screen.blit(sky_surf, (0, 0))
+        screen.blit(ground_surf, (0, GROUND_Y))
+        screen.blit(score_surf, score_rect)
+        for i in range(len(lives_bar)): screen.blit(lives_bar[i], (10+i*50,10))
+        for egg in enemy_list: screen.blit(egg_surf, egg)
+        screen.blit(player_surf, player_rect)
+
+        pygame.display.update()
+        clock.tick(60)
+
+def move(surf, amt, score):
+    return surf.x - amt - score // (60*100)
 
 while running:
     for event in pygame.event.get():
@@ -157,8 +186,8 @@ while running:
         score_rect = score_surf.get_rect(center=(400, 50)) # Re-center text
 
         # Scroll the sky to give a feeling of running instead of the eggs coming to you
-        sky_surf.scroll(-(1 + (score // (60 * 100))),0,pygame.SCROLL_REPEAT)
-        ground_surf.scroll(-(5 + (score // (60 * 100))),0,pygame.SCROLL_REPEAT)
+        sky_surf.scroll(-(1 + score // (60*100)),0,pygame.SCROLL_REPEAT)
+        ground_surf.scroll(-(5 + score // (60*100)),0,pygame.SCROLL_REPEAT)
 
         # Blit the level assets
         screen.blit(sky_surf, (0, 0))
@@ -171,10 +200,11 @@ while running:
         else: egg_surf = pygame.image.load("graphics/egg/egg_2.png").convert_alpha()
 
         for obj in enemy_list:
-            obj.x -= 5 + (score // (60 * 100))
+            obj.x = move(obj,5, score)
             if obj.right <= 0:
                 enemy_list.remove(obj)
-            screen.blit(egg_surf, obj)
+            else:
+                screen.blit(egg_surf, obj)
 
         # Adjust player's vertical location then blit it
         player_gravity_speed += 1
@@ -190,7 +220,7 @@ while running:
         # Adjust pickup's location then blit it
         powerup_timer_surf = game_font.render(f"{(invincibility_end - score) // 60 + 1}", False, "White")
         for pick in pickup_list:
-            pick.x -= 3 + (score // (60 * 100))
+            pick.x = move(pick, 3, score)
             pick.y = 200 + int(math.sin(score / 30) * 50)
             # Pickup collision
             if pick.colliderect(player_rect):
@@ -224,24 +254,7 @@ while running:
         if lives <= 0:
             gameloop_active = False
             # Game Over animation
-            player_gravity_speed = -10
-            player_surf = pygame.image.load("graphics/player/player_jump.png").convert_alpha()
-            game_over_sound.play()
-            song.stop()
-            while player_rect.bottom < 500:
-                player_gravity_speed += 0.5
-                player_rect.y += player_gravity_speed
-
-                screen.fill("purple")
-                screen.blit(sky_surf, (0, 0))
-                screen.blit(ground_surf, (0, GROUND_Y))
-                screen.blit(score_surf, score_rect)
-                for i in range(len(lives_bar)): screen.blit(lives_bar[i], (10+i*50,10))
-                for egg in enemy_list: screen.blit(egg_surf, egg)
-                screen.blit(player_surf, player_rect)
-
-                pygame.display.update()
-                clock.tick(60)
+            game_over_animation()
 
             lives = LIVES
             player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
@@ -261,5 +274,6 @@ while running:
 
     clock.tick(60)  # Limits loop to 60 FPS
 
+print_credits()
 pygame.mixer.quit()
 pygame.quit()
