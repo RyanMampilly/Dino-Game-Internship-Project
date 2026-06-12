@@ -103,6 +103,17 @@ game_over_sound = pygame.mixer.Sound("audio/game_over.wav")
 song = pygame.mixer.Sound("audio/song_badinerie.wav")
 song.play(-1)
 
+def r_hiscore():
+    with open("high_scores.txt") as f:
+        return int(f.read())
+
+def w_hiscore(the_score):
+    with open("high_scores.txt") as f:
+        current_score = int(f.read())
+    if the_score > current_score:
+        with open("high_scores.txt", "w") as f:
+            f.write(str(the_score))
+
 def print_credits():
     print("(c) ANDERSON INNOVATIONS")
     print("Made with PyGame-CE")
@@ -266,7 +277,8 @@ while running:
     else:
         screen.fill("black")
         screen.blit(game_over_surf, game_over_rect)
-        score_surf = game_font.render(f"SCORE: {score // 60}", False, "White") 
+        w_hiscore(score // 60)
+        score_surf = game_font.render(f"SCORE: {score // 60} HISCORE: {r_hiscore()}", False, "White") 
         screen.blit(score_surf, score_surf.get_rect(center=(400, 250)))
         
     # flip the display to put your work on screen
